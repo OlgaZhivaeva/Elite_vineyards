@@ -3,7 +3,6 @@ import datetime
 import pandas as pd
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from  pprint import pprint
 
 
 def get_years(number):
@@ -18,52 +17,37 @@ def get_years(number):
     return 'лет'
 
 
-excel_df_2 = pd.read_excel(io='wine2.xlsx', na_values=['N/A', 'NA'], keep_default_na=False)
-wines_list = excel_df_2.to_dict('records')
-wines = collections.defaultdict(list)
-for wine in wines_list:
-    wines[wine["Категория"]].append(wine)
-pprint(wines)
+def main():
+    excel_df = pd.read_excel(io='wine3.xlsx', na_values=['N/A', 'NA'], keep_default_na=False)
+    wines_list = excel_df.to_dict('records')
+    wines = collections.defaultdict(list)
+    for wine in wines_list:
+        wines[wine["Категория"]].append(wine)
 
-# wines_dict = {}
-# wine_dict = {}
-# for wine in wines_list:
-#     wine_dict['Картинка'] = wine['Картинка']
-#     wine_dict['Название'] = wine['Название']
-#     wine_dict['Сорт'] = wine['Сорт']
-#     wine_dict['Цена'] = wine['Цена']
-#     if wines_dict.get(wine["Категория"]):
-#         wines_dict[wine["Категория"]].append(wine_dict)
-#     else:
-#         wines_dict[wine["Категория"]] = [wine_dict]
-# pprint(wines_dict)
+    year_production_start = datetime.datetime(year=1920, month=1, day=1)
+    current_year = datetime.datetime.now().year
+    number = current_year - year_production_start.year
+    years = get_years(number)
+    delta = f'{number} {years}'
 
+    env = Environment(
+        loader=FileSystemLoader('.'),
+        autoescape=select_autoescape(['html', 'xml'])
+    )
 
-# excel_df = pd.read_excel(io='wine.xlsx')
-# wines = excel_df.to_dict('records')
+    template = env.get_template('template.html')
 
-year_production_start = datetime.datetime(year=1920, month=1, day=1)
-current_year = datetime.datetime.now().year
-number = current_year - year_production_start.year
-years = get_years(number)
-delta = f'{number} {years}'
+    rendered_page = template.render(
+        delta=delta,
+        wines=wines
+    )
 
-env = Environment(
-    loader=FileSystemLoader('.'),
-    autoescape=select_autoescape(['html', 'xml'])
-)
+    with open('index.html', 'w', encoding="utf8") as file:
+        file.write(rendered_page)
 
-template = env.get_template('template.html')
-
-rendered_page = template.render(
-    delta=delta,
-    wines=wines
-)
-
-with open('index.html', 'w', encoding="utf8") as file:
-    file.write(rendered_page)
+    server = HTTPServer(('0.0.0.0', 8000), SimpleHTTPRequestHandler)
+    server.serve_forever()
 
 
-server = HTTPServer(('0.0.0.0', 8000), SimpleHTTPRequestHandler)
-server.serve_forever()
-
+if __name__ == "__main__":
+    main()
