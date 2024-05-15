@@ -1,3 +1,4 @@
+import argparse
 import collections
 import datetime
 import pandas as pd
@@ -17,8 +18,17 @@ def get_years(number):
     return 'лет'
 
 
+def get_link_to_excel():
+    """Функция получает ссылку на excel файл из командной строки"""
+    parser = argparse.ArgumentParser(description='Сайт Новое русское вино')
+    parser.add_argument('-l', '--link_to_excel', default='wine3.xlsx', help='Ссылка на ваш excel файл')
+    args = parser.parse_args()
+    return args.link_to_excel
+
+
 def main():
-    excel_df = pd.read_excel(io='wine3.xlsx', na_values=['N/A', 'NA'], keep_default_na=False)
+    link = get_link_to_excel()
+    excel_df = pd.read_excel(io=link, na_values=['N/A', 'NA'], keep_default_na=False)
     wines_list = excel_df.to_dict('records')
     wines = collections.defaultdict(list)
     for wine in wines_list:
@@ -44,6 +54,8 @@ def main():
 
     with open('index.html', 'w', encoding="utf8") as file:
         file.write(rendered_page)
+    url = "http://127.0.0.1:8000"
+    print(f"Перейдите на сайт по адресу {url}")
 
     server = HTTPServer(('0.0.0.0', 8000), SimpleHTTPRequestHandler)
     server.serve_forever()
